@@ -3,6 +3,8 @@ package com.rbinternational.awstools.awsjwtvalidator;
 import com.auth0.jwk.GuavaCachedJwkProvider;
 import com.auth0.jwk.Jwk;
 import com.auth0.jwk.JwkProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.security.Key;
@@ -27,27 +29,38 @@ public class AWSAlbUserClaimsJwkProvider implements JwkProvider {
 
     private static final String PUBLIC_KEY_ALGORITHM = "EC";
 
+    private final Logger logger = LoggerFactory.getLogger(AWSAlbUserClaimsJwkProvider.class);
+
     private final String baseAlbEndpoint;
 
-    private final PublicKeyRemoteReader publicKeyRemoteReader;
+    private final PublicKeyReader publicKeyReader;
 
-    protected AWSAlbUserClaimsJwkProvider(String baseAlbEndpoint, PublicKeyRemoteReader remoteReader) {
+    protected AWSAlbUserClaimsJwkProvider(String baseAlbEndpoint, PublicKeyReader remoteReader) {
         if (baseAlbEndpoint == null) {
             throw new IllegalArgumentException("baseAlbEndpoint must be provided!");
         }
         if (remoteReader == null) {
             throw new IllegalArgumentException("remoteReader must be provided!");
         }
+        logger.debug("baseAlbEndpoint: {}", baseAlbEndpoint);
+        logger.debug("remoteReader: {}", remoteReader);
         this.baseAlbEndpoint = baseAlbEndpoint;
-        this.publicKeyRemoteReader = remoteReader;
+        this.publicKeyReader = remoteReader;
     }
 
     @Override
     public Jwk get(String keyId) throws InvalidTokenException {
+        logger.debug("getting JWK for keyID: {}", keyId);
+        if (keyId == null || keyId.trim().length() == 0) {
+            throw new InvalidTokenException("keyId is missing!");
+        }
         try {
             String url = this.baseAlbEndpoint + "/" + keyId;
-            String readPEM = this.publicKeyRemoteReader.readPublicKey(new URL(url));
+            logger.debug("ALB public key url: {}", url);
+            String readPEM = this.publicKeyReader.readPublicKey(new URL(url));
+            logger.debug("keyId: {}, got PEM: {}", keyId, readPEM);
             Key publicKey = Utils.publicKeyFromPEM(readPEM, PUBLIC_KEY_ALGORITHM);
+            logger.debug("converted public key: {} for PEM: {}", publicKey, readPEM);
             return new AWSAlbUserClaimsJwk(keyId, publicKey);
         }
         catch (Throwable t) {
@@ -96,13 +109,13 @@ public class AWSAlbUserClaimsJwkProvider implements JwkProvider {
         return createProviderInt(baseAlbEndpoint, null);
     }
 
-    public static JwkProvider createProvider(String baseAlbEndpoint, PublicKeyRemoteReader reader) {
+    public static JwkProvider createProvider(String baseAlbEndpoint, PublicKeyReader reader) {
         return createProviderInt(baseAlbEndpoint, reader);
     }
 
-    private static JwkProvider createProviderInt(String url, PublicKeyRemoteReader reader) {
+    private static JwkProvider createProviderInt(String url, PublicKeyReader reader) {
         if (reader == null) {
-            reader  = new HttpPublicKeyRemoteReader();
+            reader  = new HttpPublicKeyReader();
         }
         return new GuavaCachedJwkProvider(new AWSAlbUserClaimsJwkProvider(url, reader), 5, 24, TimeUnit.HOURS);
     }

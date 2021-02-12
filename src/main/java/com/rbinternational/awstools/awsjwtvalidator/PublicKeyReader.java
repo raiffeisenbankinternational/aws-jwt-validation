@@ -6,7 +6,7 @@ import java.net.URL;
 /**
  * Abstraction on how the public keys are obtained. Useful for test implementations, to avoid real network access.
  */
-public interface PublicKeyRemoteReader {
+public interface PublicKeyReader {
 
     String readPublicKey(URL url) throws IOException;
 }

@@ -4,6 +4,8 @@ import com.auth0.jwk.GuavaCachedJwkProvider;
 import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import io.jsonwebtoken.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.Key;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +17,8 @@ import java.util.concurrent.TimeUnit;
  * The signing public keys are cached internally for 5 days - according to AWS they can be read only once.
  */
 public class AWSAlbAccessTokenValidator {
+
+    private final Logger logger = LoggerFactory.getLogger(AWSAlbAccessTokenValidator.class);
 
     private final String url;
 
@@ -30,6 +34,7 @@ public class AWSAlbAccessTokenValidator {
         if (url == null) {
             throw new IllegalArgumentException("url for cognito user pool must be provided!");
         }
+        logger.debug("AWSAlbAccessTokenValidator given url {} ", url);
         this.url = url;
         this.signingKeyResolver = new RSASigningKeyResolver(createProvider());
     }
@@ -42,6 +47,7 @@ public class AWSAlbAccessTokenValidator {
      * @return the claims in the token
      */
     public Jws<Claims> validateToken(String token) throws InvalidTokenException {
+        logger.debug("Processing token {}", token);
         try {
             Jws<Claims> claimsJws = Jwts.parserBuilder()
                     .requireIssuer(this.url)
@@ -49,9 +55,11 @@ public class AWSAlbAccessTokenValidator {
                     .setSigningKeyResolver(getSigningKeyResolver())
                     .build()
                     .parseClaimsJws(token);
+            logger.debug("Got claims: {}", claimsJws);
             return claimsJws;
         }
         catch (Exception e) {
+            logger.error(e.getMessage(), e);
             throw new InvalidTokenException(e);
         }
     }
@@ -68,7 +76,9 @@ public class AWSAlbAccessTokenValidator {
         return new GuavaCachedJwkProvider(new UrlJwkProvider(url), 5, 5, TimeUnit.DAYS);
     }
 
-    private class RSASigningKeyResolver extends SigningKeyResolverAdapter {
+    private static class RSASigningKeyResolver extends SigningKeyResolverAdapter {
+
+        private final Logger logger = LoggerFactory.getLogger(RSASigningKeyResolver.class);
 
         private JwkProvider provider;
 
@@ -78,10 +88,14 @@ public class AWSAlbAccessTokenValidator {
 
         @Override
         public Key resolveSigningKey(JwsHeader header, Claims claims) throws InvalidTokenException {
+            logger.debug("resolveSigningKey for header: {}, claims: {}", header, claims);
             try {
-                return provider.get(header.getKeyId()).getPublicKey();
+                Key publicKey = provider.get(header.getKeyId()).getPublicKey();
+                logger.debug("resolveSigningKey, got public key: {}", publicKey);
+                return publicKey;
             }
             catch (Exception e) {
+                logger.error("Exception in RSASigningKeyResolver " + e.getMessage(), e);
                 throw new InvalidTokenException(e);
             }
         }
