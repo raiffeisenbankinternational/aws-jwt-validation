@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class AWSAlbUserClaimsJwkProvider implements JwkProvider {
 
     /**
-     * Points to the region specific ALB public keys URL for <code>>eu-central-1</code region.
+     * Points to the region specific ALB public keys URL for <code>eu-central-1</code> region.
      * See also <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html">Authenticate users using an Application Load Balancer</a>
      */
     public static final String EU_CENTRAL_1_ALB_KEY_ENDPOINT = "https://public-keys.auth.elb.eu-central-1.amazonaws.com";
