@@ -22,7 +22,7 @@ public class Utils {
      *
      * @return the converted {@link PublicKey}
      *
-     * @throws PEMDecodingException, if the file is invalid PEM format
+     * @throws PEMDecodingException if the file is invalid PEM format
      */
     public static Key publicKeyFromPEM(String pem, String algorithm) throws PEMDecodingException {
         LOGGER.debug("convert PEM: {}, with algorithm: {}", pem, algorithm);
