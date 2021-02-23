@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * the same as the Cognito url and that the "token_use" is "access".
  * The signing public keys are cached internally for 5 days - according to AWS they can be read only once.
  */
-public class AWSAlbAccessTokenValidator {
+public class AWSAlbAccessTokenValidator implements JwtTokenValidator {
 
     private final Logger logger = LoggerFactory.getLogger(AWSAlbAccessTokenValidator.class);
 
@@ -46,6 +46,7 @@ public class AWSAlbAccessTokenValidator {
      *
      * @return the claims in the token
      */
+    @Override
     public Jws<Claims> validateToken(String token) throws InvalidTokenException {
         logger.debug("Processing token {}", token);
         try {

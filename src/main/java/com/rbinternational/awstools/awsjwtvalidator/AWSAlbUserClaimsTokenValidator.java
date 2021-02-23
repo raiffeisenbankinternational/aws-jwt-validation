@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Validates ALB user claims tokens as described in <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html#user-claims-encoding">AWS ALB documentation</a>
  */
-public class AWSAlbUserClaimsTokenValidator {
+public class AWSAlbUserClaimsTokenValidator implements JwtTokenValidator {
 
     private final Logger logger = LoggerFactory.getLogger(AWSAlbUserClaimsTokenValidator.class);
 
@@ -27,6 +27,7 @@ public class AWSAlbUserClaimsTokenValidator {
         this.signingKeyResolver = signingKeyResolver;
     }
 
+    @Override
     public Jws<Claims> validateToken(String token) throws InvalidTokenException {
         logger.debug("processing token: {}", token);
         try {
